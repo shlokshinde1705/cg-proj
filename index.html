@@ -464,7 +464,7 @@
         }
 
         .hide {
-            display: none !important;
+            display: none;
         }
     </style>
 </head>
@@ -615,16 +615,16 @@
 
         // Loading Screen Management
         function hideLoading() {
-            if (domReady && canvasReady) {
-                $('#canvas').show();
+            if (domReady && canvasReady && !loadFinish) {
                 loadFinish = true;
+                $('#canvas').removeClass('hide').show();
                 setTimeout(function() {
                     $('.loading').css({ transition: 'opacity 0.4s ease', opacity: 0 });
                     setTimeout(function() {
-                        $('.loading').hide();
-                        $('.landing').show();
+                        $('.loading').addClass('hide').hide();
+                        $('.landing').removeClass('hide').show();
                     }, 400);
-                }, 600);
+                }, 500);
             }
         }
 
@@ -635,12 +635,13 @@
             if (failed > 0 && !loadError) {
                 loadError = true;
             }
-            var percent = Math.floor((success / total) * 100);
+            var loaded = success + failed;
+            var percent = total > 0 ? Math.floor((loaded / total) * 100) : 100;
             if (percent >= 100 && !canvasReady) {
                 canvasReady = true;
                 hideLoading();
             }
-            percent = percent > 98 ? 98 : percent;
+            percent = percent > 98 && !canvasReady ? 98 : percent;
             $('.loading .title').text(percent + '%');
             $('.loading .percent').css({ 'width': percent + '%' });
         }
@@ -690,7 +691,7 @@
             $('.landing .action-1').addClass('slideTop');
             $('.landing .start-container').addClass('slideBottom');
             setTimeout(function() {
-                $('.landing').hide();
+                $('.landing').addClass('hide').hide();
             }, 600);
         }
 
@@ -708,8 +709,11 @@
             }, 450);
         }
 
-        $('#start').on('click', function(e) {
-            if (e) e.stopPropagation();
+        $('#start').on('click touchend', function(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
             startGame();
         });
 
@@ -750,6 +754,18 @@
             }
         });
 
+        // Universal click/tap to drop block across both desktop mouse and touchscreen devices
+        $('#game-wrapper').on('pointerdown mousedown', function(e) {
+            if ($(e.target).closest('#sound-toggle, #start, .modal, .landing').length) {
+                return;
+            }
+            if (!gameStart) {
+                startGame();
+            } else if (game && game.touchStartListener) {
+                game.touchStartListener();
+            }
+        });
+
         // Mobile orientation handling
         function checkOrientation() {
             var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -765,11 +781,27 @@
         window.addEventListener('orientationchange', checkOrientation);
         checkOrientation();
 
-        // Window load listener
+        // Window & DOM load listeners
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            domReady = true;
+        }
+        window.addEventListener('DOMContentLoaded', function() {
+            domReady = true;
+            hideLoading();
+        });
         window.addEventListener('load', function() {
             domReady = true;
             hideLoading();
         }, false);
+
+        // Fallback safety timeout: ensure game reveals if loading event delays
+        setTimeout(function() {
+            if (!loadFinish) {
+                domReady = true;
+                canvasReady = true;
+                hideLoading();
+            }
+        }, 3000);
 
         // Start initialization
         initGame();
