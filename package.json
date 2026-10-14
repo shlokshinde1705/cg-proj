@@ -1,0 +1,17 @@
+{
+  "name": "tower-building-game",
+  "version": "1.0.0",
+  "description": "HTML5 Tower Building Arcade Game cloned with Ditto and refined for desktop & mobile play",
+  "scripts": {
+    "start": "npx -y serve . -l 3000",
+    "dev": "npx -y serve . -l 3000"
+  },
+  "keywords": [
+    "tower-building",
+    "arcade-game",
+    "html5",
+    "canvas"
+  ],
+  "author": "",
+  "license": "ISC"
+}

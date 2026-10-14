@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Tower Building - Build the Highest Tower</title>
+    <meta name="description" content="Build your tower high, focus on timing while building floor after floor. Build higher than the Burj Khalifa and set the ultimate high score!">
+    <meta name="keywords" content="arcade, tower, stack, game, canvas, html5, physics, tower building">
+    <link rel="shortcut icon" href="./assets/heart.png" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #F95240 url(./assets/main-bg.png) repeat;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #fff;
+        }
+
+        @font-face {
+            font-family: 'wenxue';
+            src: url('./assets/wenxue.eot');
+            src: url('./assets/wenxue.eot') format('embedded-opentype'),
+                 url('./assets/wenxue.woff') format('woff'),
+                 url('./assets/wenxue.svg') format('svg');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        .font-wenxue {
+            font-family: 'wenxue', 'Impact', 'Trebuchet MS', Arial, sans-serif;
+        }
+
+        /* Screen Wrapper */
+        #game-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #container_LP {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #canvas {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+            background: transparent;
+            z-index: 1;
+        }
+
+        .content {
+            position: relative;
+            height: 100vh;
+            margin: 0 auto;
+            z-index: 2;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .content > * {
+            pointer-events: auto;
+        }
+
+        /* Top HUD / Controls */
+        .game-hud {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            right: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .hud-chip {
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            pointer-events: auto;
+        }
+
+        .sound-btn {
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.15s, background 0.2s;
+            pointer-events: auto;
+        }
+
+        .sound-btn:hover {
+            transform: scale(1.08);
+            background: rgba(0, 0, 0, 0.65);
+        }
+
+        .sound-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: #fff;
+        }
+
+        /* Loading Screen */
+        .loading {
+            background: linear-gradient(135deg, #F05A50 0%, #E63946 100%);
+            height: 100%;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 20;
+        }
+
+        .loading .main {
+            width: 75%;
+            max-width: 320px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .loading .main img {
+            width: 55%;
+            margin-bottom: 24px;
+            filter: drop-shadow(0 8px 16px rgba(0,0,0,0.2));
+        }
+
+        .loading .main .title {
+            font-size: 32px;
+            font-weight: 900;
+            color: #FFE600;
+            text-shadow: 2px 2px 0 #D63031;
+            margin-bottom: 8px;
+        }
+
+        .loading .main .bar {
+            height: 16px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 2px solid #FFF;
+            border-radius: 12px;
+            overflow: hidden;
+            padding: 2px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.25);
+        }
+
+        .loading .main .bar .sub {
+            height: 100%;
+            width: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .loading .main .bar .percent {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #FFE600, #FFA502);
+            border-radius: 8px;
+            transition: width 0.15s ease-out;
+        }
+
+        .loading .main .text {
+            font-size: 14px;
+            letter-spacing: 1px;
+            margin-top: 10px;
+            text-transform: uppercase;
+            opacity: 0.9;
+            font-weight: 600;
+        }
+
+        /* Landing / Title Screen */
+        .landing {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-around;
+            padding: 40px 20px 30px;
+            z-index: 5;
+        }
+
+        .landing .title {
+            width: 75%;
+            max-width: 290px;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+        }
+
+        .landing .start-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            width: 100%;
+        }
+
+        .landing .start {
+            width: 65%;
+            max-width: 240px;
+            cursor: pointer;
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));
+        }
+
+        .landing .start:hover {
+            transform: scale(1.06);
+        }
+
+        .landing .start:active {
+            transform: scale(0.96);
+        }
+
+        .landing .tip-badge {
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(6px);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #FFE600;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            letter-spacing: 0.5px;
+            animation: pulseText 1.8s infinite ease-in-out;
+        }
+
+        @keyframes pulseText {
+            0%, 100% { opacity: 0.9; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.04); }
+        }
+
+        .swing {
+            animation: swingAnim 2.2s ease-in-out infinite alternate;
+            transform-origin: top center;
+        }
+
+        @keyframes swingAnim {
+            0% { transform: rotate(5deg); }
+            100% { transform: rotate(-5deg); }
+        }
+
+        .slideTop {
+            animation: stAnim 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes stAnim {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-120%); opacity: 0; }
+        }
+
+        .slideBottom {
+            animation: sbAnim 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes sbAnim {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(120%); opacity: 0; }
+        }
+
+        /* Modal / Game Over Screen */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 30;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal .mask {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+
+        .modal .modal-content {
+            position: relative;
+            z-index: 2;
+            width: 88%;
+            max-width: 360px;
+            margin: auto;
+            animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.7); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .modal .card-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .modal .bg {
+            width: 100%;
+            display: block;
+            filter: drop-shadow(0 15px 30px rgba(0,0,0,0.5));
+        }
+
+        .modal .modal-main {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding-bottom: 25px;
+        }
+
+        .modal .over-img {
+            width: 50%;
+            margin-top: 15px;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        }
+
+        .modal .score-row {
+            margin: 10px 0 4px;
+            text-align: center;
+        }
+
+        .modal .score-label {
+            font-size: 13px;
+            color: #9B724E;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .modal .over-score {
+            font-size: 52px;
+            line-height: 1;
+            color: #FF5252;
+            text-shadow: -2px -2px 0 #FFF, 2px -2px 0 #FFF, -2px 2px 0 #FFF, 2px 2px 0 #FFF, 0 4px 8px rgba(0,0,0,0.2);
+            font-weight: 900;
+        }
+
+        .modal .best-score {
+            font-size: 14px;
+            color: #8C5329;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+
+        .modal .buttons-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            width: 75%;
+            margin-top: 14px;
+        }
+
+        .modal .over-button-b {
+            width: 100%;
+            cursor: pointer;
+            transition: transform 0.15s, filter 0.15s;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.25));
+        }
+
+        .modal .over-button-b:hover {
+            transform: scale(1.05);
+        }
+
+        .modal .over-button-b:active {
+            transform: scale(0.96);
+        }
+
+        /* Device Orientation prompt for mobile landscape */
+        #Orientation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #2C3E50;
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .phone-rotate-box {
+            text-align: center;
+            color: #fff;
+        }
+
+        .phone-icon {
+            width: 50px;
+            height: 90px;
+            border: 4px solid #fff;
+            border-radius: 12px;
+            margin: 0 auto 20px;
+            position: relative;
+            animation: phoneRotateAnim 1.6s ease-in-out infinite alternate;
+        }
+
+        @keyframes phoneRotateAnim {
+            0% { transform: rotate(90deg); }
+            50%, 100% { transform: rotate(0deg); }
+        }
+
+        .phone-rotate-box p {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .hide {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Mobile Landscape Orientation Notice -->
+    <div id="Orientation">
+        <div class="phone-rotate-box">
+            <div class="phone-icon"></div>
+            <p>Please rotate your device<br>to Portrait to play</p>
+        </div>
+    </div>
+
+    <!-- Main Game Container -->
+    <div id="game-wrapper">
+        <span id="container_LP">
+            <canvas id="canvas" class="hide"></canvas>
+
+            <div class="content">
+                <!-- Top HUD -->
+                <div class="game-hud">
+                    <div class="hud-chip" id="high-score-chip">
+                        <span>🏆 BEST:</span>
+                        <span id="best-score-val" class="font-wenxue">0</span>
+                    </div>
+                    <button class="sound-btn" id="sound-toggle" title="Toggle Sound" aria-label="Toggle Sound">
+                        <svg id="sound-icon-on" viewBox="0 0 24 24">
+                            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                        </svg>
+                        <svg id="sound-icon-off" class="hide" viewBox="0 0 24 24">
+                            <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27l4.73 4.73H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- 1. Loading State -->
+                <div class="loading">
+                    <div class="main">
+                        <img src="./assets/main-loading.gif" alt="Loading game">
+                        <div class="progress">
+                            <div class="title font-wenxue">0%</div>
+                            <div class="bar">
+                                <div class="sub">
+                                    <div class="percent"></div>
+                                </div>
+                            </div>
+                            <div class="text">Loading Tower...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Landing / Title State -->
+                <div class="landing hide">
+                    <div class="action-1">
+                        <img src="./assets/main-index-title.png" alt="Tower Building" class="title swing">
+                    </div>
+                    <div class="start-container">
+                        <img id="start" src="./assets/main-index-start.png" alt="Start Game" class="start">
+                        <div class="tip-badge">TAP OR PRESS SPACE TO DROP BLOCKS</div>
+                    </div>
+                </div>
+
+                <!-- 3. Game Over Modal -->
+                <div id="modal" class="modal hide">
+                    <div class="mask"></div>
+                    <div class="modal-content">
+                        <div class="card-container">
+                            <img src="./assets/main-modal-bg.png" alt="Modal background" class="bg">
+                            <div class="modal-main">
+                                <img src="./assets/main-modal-over.png" alt="Game Over" class="over-img">
+                                <div class="score-row">
+                                    <div class="score-label">Tower Score</div>
+                                    <div id="score" class="over-score font-wenxue">0</div>
+                                    <div class="best-score">Best: <span id="modal-best-score" class="font-wenxue">0</span></div>
+                                </div>
+                                <div class="buttons-container">
+                                    <img src="./assets/main-modal-again-b.png" alt="Play Again" class="over-button-b js-reload">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </span>
+    </div>
+
+    <!-- Scripts -->
+    <script src="./dist/main.js"></script>
+    <script src="./assets/zepto-1.1.6.min.js"></script>
+    <script>
+        var domReady = false, loadFinish = false, canvasReady = false, loadError = false;
+        var gameStart = false, game = null, currentScore = 0, successCount = 0;
+        var soundEnabled = true;
+
+        // Local Storage for High Score
+        var HIGH_SCORE_KEY = "tower_building_best_score";
+        var bestScore = parseInt(localStorage.getItem(HIGH_SCORE_KEY) || "0", 10);
+        $('#best-score-val').text(bestScore);
+        $('#modal-best-score').text(bestScore);
+
+        function updateHighScore(score) {
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem(HIGH_SCORE_KEY, bestScore);
+                $('#best-score-val').text(bestScore);
+                $('#modal-best-score').text(bestScore);
+            }
+        }
+
+        // Screen Ratio and Dimensions
+        var gameWidth = window.innerWidth;
+        var gameHeight = window.innerHeight;
+        var ratio = 1.5;
+        if (gameHeight / gameWidth < ratio) {
+            gameWidth = Math.ceil(gameHeight / ratio);
+        }
+
+        $('.content').css({
+            "height": gameHeight + "px",
+            "width": gameWidth + "px"
+        });
+
+        // Polyfill fadeIn/fadeOut for Zepto
+        if (!$.fn.fadeOut) {
+            $.fn.fadeOut = function(dur, cb) {
+                return this.each(function() {
+                    var el = $(this);
+                    el.css({ transition: 'opacity 0.35s ease', opacity: 0 });
+                    setTimeout(function() {
+                        el.hide().css({ opacity: 1, transition: '' });
+                        if (typeof cb === 'function') cb();
+                    }, 350);
+                });
+            };
+        }
+        if (!$.fn.fadeIn) {
+            $.fn.fadeIn = function(dur, cb) {
+                return this.each(function() {
+                    var el = $(this);
+                    el.css({ opacity: 0, display: 'block' }).removeClass('hide');
+                    setTimeout(function() {
+                        el.css({ transition: 'opacity 0.35s ease', opacity: 1 });
+                        if (typeof cb === 'function') setTimeout(cb, 350);
+                    }, 20);
+                });
+            };
+        }
+
+        // Loading Screen Management
+        function hideLoading() {
+            if (domReady && canvasReady) {
+                $('#canvas').show();
+                loadFinish = true;
+                setTimeout(function() {
+                    $('.loading').css({ transition: 'opacity 0.4s ease', opacity: 0 });
+                    setTimeout(function() {
+                        $('.loading').hide();
+                        $('.landing').show();
+                    }, 400);
+                }, 600);
+            }
+        }
+
+        function updateLoading(status) {
+            var success = status.success;
+            var total = status.total;
+            var failed = status.failed;
+            if (failed > 0 && !loadError) {
+                loadError = true;
+            }
+            var percent = Math.floor((success / total) * 100);
+            if (percent >= 100 && !canvasReady) {
+                canvasReady = true;
+                hideLoading();
+            }
+            percent = percent > 98 ? 98 : percent;
+            $('.loading .title').text(percent + '%');
+            $('.loading .percent').css({ 'width': percent + '%' });
+        }
+
+        function overShowOver() {
+            updateHighScore(currentScore);
+            $('#modal').removeClass('hide').show();
+        }
+
+        // Mock Rul analytics API
+        window.Rul = {
+            api: function(endpoint, data) {
+                console.log("[Rul API]", endpoint, data);
+            }
+        };
+
+        // Initialize TowerGame
+        var option = {
+            width: gameWidth,
+            height: gameHeight,
+            canvasId: 'canvas',
+            soundOn: soundEnabled,
+            setGameScore: function(s) {
+                currentScore = s;
+                updateHighScore(s);
+            },
+            setGameSuccess: function(s) {
+                successCount = s;
+            },
+            setGameFailed: function(f) {
+                $('#score').text(currentScore);
+                if (f >= 3) {
+                    overShowOver();
+                }
+            }
+        };
+
+        function initGame() {
+            game = TowerGame(option);
+            game.load(function() {
+                game.init();
+            }, updateLoading);
+        }
+
+        // Start button transition
+        function indexHide() {
+            $('.landing .action-1').addClass('slideTop');
+            $('.landing .start-container').addClass('slideBottom');
+            setTimeout(function() {
+                $('.landing').hide();
+            }, 600);
+        }
+
+        function startGame() {
+            if (gameStart) return;
+            gameStart = true;
+            if (soundEnabled && game && game.playBgm) {
+                game.playBgm();
+            }
+            indexHide();
+            setTimeout(function() {
+                if (game && game.start) {
+                    game.start();
+                }
+            }, 450);
+        }
+
+        $('#start').on('click', function(e) {
+            if (e) e.stopPropagation();
+            startGame();
+        });
+
+        // Restart Handler
+        $('.js-reload').on('click', function() {
+            window.location.reload();
+        });
+
+        // Sound Mute Toggle
+        $('#sound-toggle').on('click', function(e) {
+            e.stopPropagation();
+            soundEnabled = !soundEnabled;
+            if (game) {
+                game.soundOn = soundEnabled;
+                if (!soundEnabled) {
+                    if (game.pauseBgm) game.pauseBgm();
+                } else if (gameStart) {
+                    if (game.playBgm) game.playBgm();
+                }
+            }
+            if (soundEnabled) {
+                $('#sound-icon-on').removeClass('hide');
+                $('#sound-icon-off').addClass('hide');
+            } else {
+                $('#sound-icon-on').addClass('hide');
+                $('#sound-icon-off').removeClass('hide');
+            }
+        });
+
+        // Desktop Spacebar support
+        window.addEventListener('keydown', function(e) {
+            if (e.code === 'Space' || e.keyCode === 32) {
+                if (!gameStart) {
+                    startGame();
+                } else if (game && game.touchStartListener) {
+                    game.touchStartListener();
+                }
+            }
+        });
+
+        // Mobile orientation handling
+        function checkOrientation() {
+            var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (isMobile) {
+                if (window.innerWidth > window.innerHeight) {
+                    $('#Orientation').css('display', 'flex');
+                } else {
+                    $('#Orientation').hide();
+                }
+            }
+        }
+        window.addEventListener('resize', checkOrientation);
+        window.addEventListener('orientationchange', checkOrientation);
+        checkOrientation();
+
+        // Window load listener
+        window.addEventListener('load', function() {
+            domReady = true;
+            hideLoading();
+        }, false);
+
+        // Start initialization
+        initGame();
+    </script>
+</body>
+
+</html>
